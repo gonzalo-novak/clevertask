@@ -1,4 +1,5 @@
 import cors from 'cors';
+import helmet from 'helmet';
 import express from 'express';
 import { example } from './routes/example';
 import { pipeRoutes } from './utils/pipeRoutes';
@@ -13,6 +14,7 @@ const server = async () => {
 			allowedHeaders: ['Content-Type', 'Authorization']
 		}));
 	}
+	app.use(helmet());
 	app.use(express.json({}));
 
 	pipeRoutes(
