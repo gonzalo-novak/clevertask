@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./
+      dockerfile: ./dockerfile.dev
+    container_name: clevertask-api-dev
+    volumes:
+     - ./:/server
+     - /server/node_modules
+    ports:
+      - ${PORT}:${PORT}
+    depends_on:
+      - db
+    environment:
+      - MONGO_URL=${MONGO_URL}
+      - JWT_KEY=${JWT_KEY}
+      - PORT=${PORT}
+  db:
+    image: mongo:7
+    volumes:
+      - mongodb:/data/db
+    ports:
+      - 27017:27017
+volumes:
+  mongodb:

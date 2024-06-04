@@ -1,0 +1,12 @@
+services:
+  backend:
+    build:
+      context: ./
+      dockerfile: ./dockerfile.prod
+    container_name: clevertask-api-prod
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      - MONGO_URL=${MONGO_URL}
+      - JWT_KEY=${JWT_KEY}
+      - PORT=${PORT}
