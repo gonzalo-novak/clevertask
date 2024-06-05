@@ -1,5 +1,5 @@
 services:
-  backend:
+  server:
     build:
       context: ./
       dockerfile: ./dockerfile.prod
