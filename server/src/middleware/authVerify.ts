@@ -4,8 +4,9 @@ import jwt, { Secret } from "jsonwebtoken";
 const authVerify = (req: Request, res: Response, next: NextFunction) => {
 	const authToken = req.get("Authorization");
 
-	if (!authToken)
+	if (!authToken) {
 		return res.status(401).json({ message: "You must be logged in" });
+	}
 
 	try {
 		if (authToken) {
