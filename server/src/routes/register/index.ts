@@ -4,13 +4,14 @@ import { logger } from "../../app";
 import { User } from "../../models/User";
 import { RegisterReqBody } from "./types";
 import { createAuthToken } from "../../utils/createAuthToken";
-import { isEmailDuplicated } from "./middleware/isEmailDuplicated";
+import { validatePassword } from "./middleware/validatePassword";
 import { validateRequiredUserFields } from "./middleware/validateFields";
+import { validateEmailDuplication } from "./middleware/validateEmailDuplication";
 
 const register = (app: Express) => {
 	app.post(
 		"/user/register",
-		[validateRequiredUserFields, isEmailDuplicated],
+		[validateRequiredUserFields, validateEmailDuplication, validatePassword],
 		async (req: Request, res: Response) => {
 			const body: RegisterReqBody = req.body;
 			const { password, name, lastName, email } = body;
