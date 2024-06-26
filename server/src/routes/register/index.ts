@@ -19,15 +19,10 @@ const register = (app: Express) => {
 			try {
 				const hash = await argon.hash(password);
 				const user = new User({ name, lastName, email, password: hash });
-				const document = await user.save();
-
-				const userDB = await User.findById(document._id).select(
-					"-password -createdAt -updatedAt -__v -_id"
-				);
+				await user.save();
 
 				return res.status(201).json({
 					data: {
-						user: userDB,
 						token: createAuthToken({ user: user._id }),
 					},
 				});
