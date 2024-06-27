@@ -5,7 +5,7 @@ const authVerify = (req: Request, res: Response, next: NextFunction) => {
 	const authToken = req.get("Authorization");
 
 	if (!authToken) {
-		return res.status(401).json({ message: "You must be logged in" });
+		return res.sendStatus(401);
 	}
 
 	try {
@@ -14,9 +14,7 @@ const authVerify = (req: Request, res: Response, next: NextFunction) => {
 			next();
 		}
 	} catch (error) {
-		return res.status(401).json({
-			message: "your token has been expired, log in again.",
-		});
+		return res.sendStatus(401);
 	}
 };
 

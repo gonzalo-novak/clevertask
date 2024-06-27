@@ -1,5 +1,10 @@
 export const paths = {
 	ROOT: "/",
-	LOGIN: "/user/login",
-	REGISTER: "/user/register",
+	LOGIN: "/login",
+	LOGOUT: "/logout",
+	REGISTER: "/register",
+	USER: {
+		ROOT: "/user",
+		OVERVIEW: "/user/overview",
+	},
 };
