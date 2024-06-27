@@ -9,11 +9,15 @@ import {
 	Text,
 	useToast,
 } from "@chakra-ui/react";
+import { paths } from "../../routes/paths";
+import { useNavigate } from "react-router-dom";
 import { FormEvent, useState } from "react";
+import { fetchData } from "../../utils/fetch-data";
 import { LOCAL_STORAGE_CLEVERTASK_ITEM, endpoints } from "../../constants";
 
 export const Login = () => {
 	const toast = useToast();
+	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
 	const [formErrors, setFormErrors] = useState<Partial<TLoginFormValues>>({});
 	const [formValues, setFormValues] = useState<TLoginFormValues>({
@@ -47,16 +51,18 @@ export const Login = () => {
 		setIsLoading(true);
 
 		try {
-			const response = await fetch(endpoints.loginUser, {
-				method: "POST",
-				body: JSON.stringify(formValues),
-				headers: { "Content-Type": "application/json" },
-			});
+			const { data, isStatusOK } = await fetchData<TLoginResponse>(
+				endpoints.loginUser,
+				{
+					method: "POST",
+					payload: formValues,
+				}
+			);
 
-			if (!response.ok) throw new Error();
+			if (!isStatusOK) throw new Error();
 
-			const json: TLoginResponse = await response.json();
-			localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, json.data.token);
+			localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data!.token);
+			navigate(paths.USER.OVERVIEW);
 		} catch (error) {
 			toast({
 				title: "Oops!",
@@ -111,5 +117,5 @@ type TLoginFormValues = {
 };
 
 type TLoginResponse = {
-	data: { token: string };
+	token: string;
 };

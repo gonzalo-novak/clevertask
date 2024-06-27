@@ -11,9 +11,13 @@ import {
 } from "@chakra-ui/react";
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
 import { LOCAL_STORAGE_CLEVERTASK_ITEM, endpoints } from "../../constants";
+import { fetchData } from "../../utils/fetch-data";
+import { NavigateFunction, useNavigate } from "react-router-dom";
+import { paths } from "../../routes/paths";
 
 export const Register = () => {
 	const toast = useToast();
+	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
 	const [formValues, setFormValues] = useState<TRegisterFormFields>({
 		name: "",
@@ -51,7 +55,7 @@ export const Register = () => {
 		}
 
 		setFormFieldErrors({});
-		registerUser(formValues, toast, setIsLoading);
+		registerUser(formValues, toast, setIsLoading, navigate);
 	};
 
 	return (
@@ -170,25 +174,26 @@ function validateFormFields(formValues: TRegisterFormFields) {
 async function registerUser(
 	formValues: TRegisterFormFields,
 	toast: CreateToastFnReturn,
-	setLoading: Dispatch<SetStateAction<boolean>>
+	setLoading: Dispatch<SetStateAction<boolean>>,
+	navigate: NavigateFunction
 ) {
 	setLoading(true);
 	try {
 		const payload = { ...formValues } as Partial<TRegisterFormFields>;
 		delete payload.confirmPassword;
 
-		const response = await fetch(endpoints.registerUser, {
-			method: "POST",
-			body: JSON.stringify(payload),
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
+		const { data, isStatusOK } = await fetchData<TRegisterResponseData>(
+			endpoints.registerUser,
+			{
+				method: "POST",
+				payload,
+			}
+		);
 
-		if (!response.ok) throw new Error();
+		if (!isStatusOK) throw new Error();
 
-		const json: TRegisterResponseData = await response.json();
-		localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, json.data.token);
+		localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data!.token);
+		navigate(paths.USER.OVERVIEW);
 	} catch (error) {
 		toast({
 			title: "Oops!",
@@ -213,5 +218,5 @@ type TRegisterFormFieldErrors = {
 };
 
 type TRegisterResponseData = {
-	data: { token: string };
+	token: string;
 };
