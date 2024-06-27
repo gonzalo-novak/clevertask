@@ -16,12 +16,7 @@ const login = (app: Express) => {
 			const user = await User.findOne({ email: { $eq: email } });
 
 			try {
-				const {
-					password: userPassword,
-					email,
-					name,
-					lastName,
-				} = user!.toObject();
+				const { password: userPassword } = user!.toObject();
 				const isPasswordValid = await argon2.verify(userPassword, password);
 
 				if (!isPasswordValid) {
@@ -31,7 +26,7 @@ const login = (app: Express) => {
 				}
 
 				const token = createAuthToken({ user: user!._id });
-				return res.json({ data: { user: { email, name, lastName }, token } });
+				return res.json({ data: { token } });
 			} catch (error) {
 				logger.error(error);
 				return res.status(500).json({
