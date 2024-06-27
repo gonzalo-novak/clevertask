@@ -63,7 +63,6 @@ export const Login = () => {
 
 			localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data!.token);
 			navigate(paths.USER.OVERVIEW);
-			console.log(paths.USER.OVERVIEW);
 		} catch (error) {
 			toast({
 				title: "Oops!",

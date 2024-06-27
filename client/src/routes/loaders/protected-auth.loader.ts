@@ -4,7 +4,6 @@ import { LOCAL_STORAGE_CLEVERTASK_ITEM } from "../../constants";
 
 export const protectedAuthLoader = async () => {
 	if (!localStorage.getItem(LOCAL_STORAGE_CLEVERTASK_ITEM)) {
-		console.log("alo?");
 		return redirect(paths.LOGIN);
 	}
 
