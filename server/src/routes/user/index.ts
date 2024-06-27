@@ -1,8 +1,8 @@
 import { logger } from "../../app";
 import { User } from "../../models/User";
-import jwt, { JwtPayload } from "jsonwebtoken";
 import { Express, Request, Response } from "express";
 import { authVerify } from "../../middleware/authVerify";
+import { getUserIdFromToken } from "../../utils/getUserIdFromToken";
 
 const user = (app: Express) => {
 	app.get(
@@ -10,11 +10,7 @@ const user = (app: Express) => {
 		[authVerify],
 		async (req: Request, res: Response) => {
 			try {
-				const authToken = req.get("Authorization");
-
-				const { user: userId } = jwt.decode(authToken!) as JwtPayload & {
-					user: string;
-				};
+				const userId = getUserIdFromToken(req);
 
 				const user = await User.findById(userId).select(
 					"-_id -password -createdAt -updatedAt -__v"

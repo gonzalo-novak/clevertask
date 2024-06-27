@@ -7,6 +7,7 @@ import { connectDatabase } from "./config/db";
 import { pipeRoutes } from "./utils/pipeRoutes";
 import { login } from "./routes/login";
 import { user } from "./routes/user";
+import { goal } from "./routes/goal";
 
 export const logger = log4js.getLogger("clevertask-log");
 logger.level = "debug";
@@ -28,7 +29,7 @@ const server = async () => {
 	app.use(helmet());
 	app.use(express.json({}));
 
-	pipeRoutes(register, login, user)(app);
+	pipeRoutes(register, login, user, goal)(app);
 
 	app.listen(port, () => {
 		console.log(`App listening at http://localhost:${port}`);
