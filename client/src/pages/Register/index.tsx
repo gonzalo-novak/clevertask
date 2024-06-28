@@ -7,18 +7,19 @@ import {
 	Text,
 	Stack,
 	useToast,
-	CreateToastFnReturn,
 } from "@chakra-ui/react";
-import { Dispatch, FormEvent, SetStateAction, useState } from "react";
-import { LOCAL_STORAGE_CLEVERTASK_ITEM, endpoints } from "../../constants";
-import { fetchData } from "../../utils/fetch-data";
-import { NavigateFunction, useNavigate } from "react-router-dom";
 import { paths } from "../../routes/paths";
+import { FormEvent, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useFetch } from "../../utils/fetch-data";
+import { LOCAL_STORAGE_CLEVERTASK_ITEM, endpoints } from "../../constants";
 
 export const Register = () => {
 	const toast = useToast();
 	const navigate = useNavigate();
-	const [isLoading, setIsLoading] = useState(false);
+	const { startFetching, isLoading } = useFetch<TRegisterResponseData>(
+		endpoints.registerUser
+	);
 	const [formValues, setFormValues] = useState<TRegisterFormFields>({
 		name: "",
 		lastName: "",
@@ -46,7 +47,7 @@ export const Register = () => {
 	}: FormEvent<HTMLInputElement>) =>
 		setFormValues((f) => ({ ...f, [name]: value }));
 
-	const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+	const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		const { isErrors, errors } = validateFormFields(formValues);
 
@@ -55,7 +56,28 @@ export const Register = () => {
 		}
 
 		setFormFieldErrors({});
-		registerUser(formValues, toast, setIsLoading, navigate);
+
+		try {
+			const payload = { ...formValues } as Partial<TRegisterFormFields>;
+			delete payload.confirmPassword;
+
+			const { data, isError } = await startFetching({
+				method: "POST",
+				payload,
+			});
+
+			if (isError) throw new Error();
+
+			localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data.token);
+			navigate(paths.USER.OVERVIEW);
+		} catch (error) {
+			toast({
+				title: "Oops!",
+				description: "We could not create your account for you.",
+				status: "error",
+				isClosable: true,
+			});
+		}
 	};
 
 	return (
@@ -169,40 +191,6 @@ function validateFormFields(formValues: TRegisterFormFields) {
 	const isErrors = Object.keys(errors).length;
 
 	return { isErrors, errors };
-}
-
-async function registerUser(
-	formValues: TRegisterFormFields,
-	toast: CreateToastFnReturn,
-	setLoading: Dispatch<SetStateAction<boolean>>,
-	navigate: NavigateFunction
-) {
-	setLoading(true);
-	try {
-		const payload = { ...formValues } as Partial<TRegisterFormFields>;
-		delete payload.confirmPassword;
-
-		const { data, isStatusOK } = await fetchData<TRegisterResponseData>(
-			endpoints.registerUser,
-			{
-				method: "POST",
-				payload,
-			}
-		);
-
-		if (!isStatusOK) throw new Error();
-
-		localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data!.token);
-		navigate(paths.USER.OVERVIEW);
-	} catch (error) {
-		toast({
-			title: "Oops!",
-			description: "We could not create your account for you.",
-			status: "error",
-			isClosable: true,
-		});
-		setLoading(false);
-	}
 }
 
 type TRegisterFormFields = {

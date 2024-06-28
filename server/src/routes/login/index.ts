@@ -6,6 +6,10 @@ import { Express, Request, Response } from "express";
 import { createAuthToken } from "../../utils/createAuthToken";
 import { verifyUserExistence } from "./middleware/verifyUserExistence";
 import { verifyUserLoginRequestFields } from "./middleware/verifyUserLoginRequestFields";
+import {
+	sendErrorResponseObject,
+	sendSuccessfulResponseObject,
+} from "../../utils/sendResponse";
 
 const login = (app: Express) => {
 	app.post(
@@ -20,18 +24,24 @@ const login = (app: Express) => {
 				const isPasswordValid = await argon2.verify(userPassword, password);
 
 				if (!isPasswordValid) {
-					return res.status(401).json({
-						message: "The credentials are not correct. Try it again.",
-					});
+					return res.status(401).json(
+						sendErrorResponseObject({
+							message: "The credentials are not correct. Try it again.",
+						})
+					);
 				}
 
 				const token = createAuthToken({ user: user!._id });
-				return res.json({ data: { token } });
+				return res.json(
+					sendSuccessfulResponseObject<{ token: string }>({ token })
+				);
 			} catch (error) {
-				logger.error(error);
-				return res.status(500).json({
-					message: "There was an error while processing the request",
-				});
+				logger.error("Login: ", error);
+				return res.status(500).json(
+					sendErrorResponseObject({
+						message: "There was an error while processing the request",
+					})
+				);
 			}
 		}
 	);

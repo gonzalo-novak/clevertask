@@ -11,7 +11,6 @@ export const router = createBrowserRouter([
 	{
 		path: paths.ROOT,
 		loader: publicAuthLoader,
-		Component: Login,
 		children: [
 			{
 				path: paths.REGISTER,
@@ -25,7 +24,7 @@ export const router = createBrowserRouter([
 				path: paths.LOGOUT,
 				loader: () => {
 					localStorage.removeItem(LOCAL_STORAGE_CLEVERTASK_ITEM);
-					return redirect(paths.ROOT);
+					return redirect(paths.LOGIN);
 				},
 			},
 		],

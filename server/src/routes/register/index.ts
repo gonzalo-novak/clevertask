@@ -7,6 +7,10 @@ import { createAuthToken } from "../../utils/createAuthToken";
 import { validatePassword } from "./middleware/validatePassword";
 import { validateRequiredUserFields } from "./middleware/validateFields";
 import { validateEmailDuplication } from "./middleware/validateEmailDuplication";
+import {
+	sendErrorResponseObject,
+	sendSuccessfulResponseObject,
+} from "../../utils/sendResponse";
 
 const register = (app: Express) => {
 	app.post(
@@ -21,16 +25,18 @@ const register = (app: Express) => {
 				const user = new User({ name, lastName, email, password: hash });
 				await user.save();
 
-				return res.status(201).json({
-					data: {
+				return res.status(201).json(
+					sendSuccessfulResponseObject<{ token: string }>({
 						token: createAuthToken({ user: user._id }),
-					},
-				});
+					})
+				);
 			} catch (error) {
-				logger.error(error);
-				return res.status(500).json({
-					message: "There was an error while creating the account.",
-				});
+				logger.error("Register: ", error);
+				return res.status(500).json(
+					sendErrorResponseObject({
+						message: "There was an error while creating the account.",
+					})
+				);
 			}
 		}
 	);
