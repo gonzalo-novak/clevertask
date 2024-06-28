@@ -1,21 +1,12 @@
-import { useEffect, useState } from "react";
-import { fetchData } from "../../utils/fetch-data";
 import { endpoints } from "../../constants";
+import { useFetch } from "../../utils/fetch-data";
 import { FirstGoalMessage } from "./components/FirstGoalMessage";
 
 export const Overview = () => {
-	const [isFirstTime, setIsFirstTime] = useState(false);
+	const { data } = useFetch<{ overview: null | Record<string, unknown> }>(
+		endpoints.userOverview,
+		{ withInitialCall: true }
+	);
 
-	useEffect(() => {
-		(async () => {
-			const { status } = await fetchData(endpoints.userOverview, {
-				useAuth: true,
-			});
-			if (status === 204) {
-				setIsFirstTime(true);
-			}
-		})();
-	}, []);
-
-	return isFirstTime ? <FirstGoalMessage /> : null;
+	return !data.overview ? <FirstGoalMessage /> : null;
 };

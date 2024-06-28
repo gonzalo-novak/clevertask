@@ -12,18 +12,22 @@ import {
 import { paths } from "../../routes/paths";
 import { useNavigate } from "react-router-dom";
 import { FormEvent, useState } from "react";
-import { fetchData } from "../../utils/fetch-data";
+import { useFetch } from "../../utils/fetch-data";
 import { LOCAL_STORAGE_CLEVERTASK_ITEM, endpoints } from "../../constants";
 
 export const Login = () => {
 	const toast = useToast();
 	const navigate = useNavigate();
-	const [isLoading, setIsLoading] = useState(false);
+
 	const [formErrors, setFormErrors] = useState<Partial<TLoginFormValues>>({});
 	const [formValues, setFormValues] = useState<TLoginFormValues>({
 		email: "",
 		password: "",
 	});
+
+	const { startFetching, isLoading } = useFetch<TLoginResponse>(
+		endpoints.loginUser
+	);
 
 	const handleFormChange = ({
 		currentTarget: { name, value },
@@ -48,20 +52,15 @@ export const Login = () => {
 			return setFormErrors(errors);
 		}
 
-		setIsLoading(true);
-
 		try {
-			const { data, isStatusOK } = await fetchData<TLoginResponse>(
-				endpoints.loginUser,
-				{
-					method: "POST",
-					payload: formValues,
-				}
-			);
+			const { data, isError } = await startFetching({
+				method: "POST",
+				payload: formValues,
+			});
 
-			if (!isStatusOK) throw new Error();
+			if (isError) throw new Error();
 
-			localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data!.token);
+			localStorage.setItem(LOCAL_STORAGE_CLEVERTASK_ITEM, data.token);
 			navigate(paths.USER.OVERVIEW);
 		} catch (error) {
 			toast({
@@ -70,7 +69,6 @@ export const Login = () => {
 				status: "error",
 				isClosable: true,
 			});
-			setIsLoading(false);
 		}
 	};
 
@@ -99,12 +97,20 @@ export const Login = () => {
 					loadingText="Signing in..."
 					type="submit"
 					colorScheme="brand"
-					margin="auto"
-					marginTop="1rem"
+					margin="2rem auto"
 					display="flex"
 					width="100%"
 				>
 					Sign in
+				</Button>
+
+				<Button
+					width="100%"
+					colorScheme="gray"
+					variant="ghost"
+					onClick={() => navigate(paths.REGISTER)}
+				>
+					Are you new? Sign up here
 				</Button>
 			</form>
 		</Stack>
