@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { UserLoginReqBody } from "../types";
+import { sendErrorResponseObject } from "../../../utils/sendResponse";
 
 export const verifyUserLoginRequestFields = async (
 	req: Request,
@@ -10,9 +11,11 @@ export const verifyUserLoginRequestFields = async (
 	const { email, password } = body;
 
 	if (!email || !password) {
-		return res.status(400).json({
-			message: "The request object does not meet the required criteria",
-		});
+		return res.status(400).json(
+			sendErrorResponseObject({
+				message: "The request object does not meet the required criteria",
+			})
+		);
 	}
 	next();
 };
