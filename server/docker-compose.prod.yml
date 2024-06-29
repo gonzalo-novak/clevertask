@@ -10,3 +10,5 @@ services:
       - MONGO_URL=${MONGO_URL}
       - JWT_KEY=${JWT_KEY}
       - PORT=${PORT}
+      - API_KEY=${API_KEY}
+      - REDIS_URL=${REDIS_URL}
