@@ -1,13 +1,13 @@
 import { Schema, model } from "mongoose";
 
-const goalSchema = new Schema(
+const projectSchema = new Schema(
 	{
 		name: { type: String, required: true },
 		description: { type: String, required: true },
-		project: { type: Schema.Types.ObjectId, ref: "Project", required: true },
+		createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 		chat: { type: Schema.Types.ObjectId, ref: "Chat", required: true },
 	},
 	{ timestamps: true }
 );
 
-export const Goal = model("Goal", goalSchema);
+export const Project = model("Project", projectSchema);

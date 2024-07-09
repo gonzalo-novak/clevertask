@@ -1,5 +1,5 @@
 import { logger } from "../../app";
-import { Express, Request, Response } from "express";
+import { Express, json, Request, Response } from "express";
 import { authVerify } from "../../middleware/authVerify";
 import {
 	sendErrorResponseObject,
@@ -10,11 +10,11 @@ import { getUserIdFromToken } from "../../utils/getUserIdFromToken";
 import { Chat } from "../../models/Chat";
 import { Message } from "../../models/Message";
 import { Content, GoogleGenerativeAI } from "@google/generative-ai";
-import { RAW_GEMINI_SYSTEM_INSTRUCTIONS } from "./constants";
+import { SYSTEM_INSTRUCTIONS } from "./constants";
 
 const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
 const generationConfig = {
-	temperature: 0.1,
+	temperature: 0.5,
 	topP: 0.95,
 	topK: 64,
 	maxOutputTokens: 8192,
@@ -50,15 +50,13 @@ const chat = (app: Express, redis: RedisClientType) => {
 				const currentChat = await Chat.findOne({
 					createdBy: userId,
 					_id: chatId,
-				})
-					.populate("createdBy")
-					.select("-password, -email");
+				}).populate("createdBy", "name");
 
 				if (!currentChat) throw new Error("Chat does not exist");
 
 				const currentChatMessages = await Message.find({
 					chatId: chatId,
-				}).sort({ createdAt: -1 });
+				}).sort({ createdAt: 1 });
 
 				let currentChatHistory: Content[] = [];
 
@@ -75,30 +73,49 @@ const chat = (app: Express, redis: RedisClientType) => {
 					await redis.set(chatId, JSON.stringify(currentChatHistory));
 				}
 
-				const systemInstruction = RAW_GEMINI_SYSTEM_INSTRUCTIONS.replaceAll(
-					"[USER_NAME]",
-					(currentChat as any).createdBy.name
-				);
+				console.log(currentChatHistory);
+
+				const _message = SYSTEM_INSTRUCTIONS.INIT.replaceAll(
+					"[USER_STATEMENT]",
+					message
+				).replaceAll("[USER_NAME]", (currentChat as any).createdBy.name);
 
 				const model = genAI.getGenerativeModel({
 					model: "gemini-1.5-flash",
-					systemInstruction,
 				});
 
 				const chat = model.startChat({
 					history: currentChatHistory,
 					generationConfig,
 				});
-				const result = await chat.sendMessage(message);
+				const result = await chat.sendMessage(_message);
 				await new Message({ chatId, message, role: "user" }).save();
 
 				const response = result.response;
 				const text = response.text();
-				await new Message({ chatId, message: text, role: "model" }).save();
+
+				console.log(currentChatHistory);
+
+				currentChatHistory = currentChatHistory.slice(0, -2);
+
+				console.log(currentChatHistory);
+
+				const cleanedResponse = text.replace(/```json|```|\n/g, "").trim();
+
+				const jsonData: { nextStage: string; message: string } =
+					JSON.parse(cleanedResponse);
+				console.log(jsonData.nextStage);
+				await new Message({
+					chatId,
+					message: jsonData.message,
+					role: "model",
+				}).save();
 
 				await redis.set(chatId, JSON.stringify(currentChatHistory));
 
-				return res.json(sendSuccessfulResponseObject({ text }));
+				return res.json(
+					sendSuccessfulResponseObject({ text: jsonData.message })
+				);
 			} catch (error) {
 				logger.error("Error while sending a new message: ", error);
 				return res.status(500).json(
