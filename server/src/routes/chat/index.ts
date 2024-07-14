@@ -1,5 +1,5 @@
 import { logger } from "../../app";
-import { Express, json, Request, Response } from "express";
+import { Express, Request, Response } from "express";
 import { authVerify } from "../../middleware/authVerify";
 import {
 	sendErrorResponseObject,
@@ -10,16 +10,19 @@ import { getUserIdFromToken } from "../../utils/getUserIdFromToken";
 import { Chat } from "../../models/Chat";
 import { Message } from "../../models/Message";
 import { Content, GoogleGenerativeAI } from "@google/generative-ai";
-import { SYSTEM_INSTRUCTIONS } from "./constants";
+import { MAIN_INSTRUCTION, SYSTEM_INSTRUCTIONS } from "./constants";
 
 const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
+
 const generationConfig = {
-	temperature: 0.5,
+	temperature: 0.25,
 	topP: 0.95,
 	topK: 64,
 	maxOutputTokens: 8192,
-	responseMimeType: "text/plain",
+	responseMimeType: "application/json",
 };
+
+let currentAction: string = "INIT";
 
 const chat = (app: Express, redis: RedisClientType) => {
 	app.post(
@@ -73,48 +76,50 @@ const chat = (app: Express, redis: RedisClientType) => {
 					await redis.set(chatId, JSON.stringify(currentChatHistory));
 				}
 
-				console.log(currentChatHistory);
-
-				const _message = SYSTEM_INSTRUCTIONS.INIT.replaceAll(
-					"[USER_STATEMENT]",
-					message
-				).replaceAll("[USER_NAME]", (currentChat as any).createdBy.name);
-
 				const model = genAI.getGenerativeModel({
-					model: "gemini-1.5-flash",
+					model: "gemini-1.5-pro",
+					systemInstruction: `${MAIN_INSTRUCTION}${SYSTEM_INSTRUCTIONS.INIT}`
+						.replaceAll("[USER_NAME]", (currentChat as any).createdBy.name)
+						.replaceAll("{action}", currentAction),
 				});
 
 				const chat = model.startChat({
 					history: currentChatHistory,
 					generationConfig,
 				});
-				const result = await chat.sendMessage(_message);
+
+				const result = await chat.sendMessage(message);
 				await new Message({ chatId, message, role: "user" }).save();
 
 				const response = result.response;
 				const text = response.text();
 
-				console.log(currentChatHistory);
-
-				currentChatHistory = currentChatHistory.slice(0, -2);
-
-				console.log(currentChatHistory);
-
 				const cleanedResponse = text.replace(/```json|```|\n/g, "").trim();
 
-				const jsonData: { nextStage: string; message: string } =
+				const jsonData: { action: string; message: string } =
 					JSON.parse(cleanedResponse);
-				console.log(jsonData.nextStage);
-				await new Message({
-					chatId,
-					message: jsonData.message,
-					role: "model",
-				}).save();
 
-				await redis.set(chatId, JSON.stringify(currentChatHistory));
+				if (jsonData.message && jsonData.action) {
+					console.log(jsonData);
 
-				return res.json(
-					sendSuccessfulResponseObject({ text: jsonData.message })
+					await new Message({
+						chatId,
+						message: JSON.stringify(jsonData),
+						role: "model",
+					}).save();
+
+					await redis.set(chatId, JSON.stringify(currentChatHistory));
+
+					currentAction = jsonData.action;
+					console.log(currentAction);
+
+					return res.json(
+						sendSuccessfulResponseObject({ text: jsonData.message })
+					);
+				}
+
+				return new Error(
+					"The AI returned a different answer than the expected one" + text
 				);
 			} catch (error) {
 				logger.error("Error while sending a new message: ", error);
