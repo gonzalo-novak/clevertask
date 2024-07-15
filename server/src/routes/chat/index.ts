@@ -16,9 +16,9 @@ const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
 
 const generationConfig = {
 	temperature: 0.25,
-	topP: 0.95,
-	topK: 64,
-	maxOutputTokens: 8192,
+	topP: 0.9,
+	topK: 40,
+	maxOutputTokens: 25000,
 	responseMimeType: "application/json",
 };
 
@@ -94,10 +94,7 @@ const chat = (app: Express, redis: RedisClientType) => {
 				const response = result.response;
 				const text = response.text();
 
-				const cleanedResponse = text.replace(/```json|```|\n/g, "").trim();
-
-				const jsonData: { action: string; message: string } =
-					JSON.parse(cleanedResponse);
+				const jsonData: { action: string; message: string } = JSON.parse(text);
 
 				if (jsonData.message && jsonData.action) {
 					console.log(jsonData);
