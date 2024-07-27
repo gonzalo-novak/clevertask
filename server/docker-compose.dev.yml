@@ -5,8 +5,8 @@ services:
       dockerfile: ./dockerfile.dev
     container_name: clevertask-api-dev
     volumes:
-     - ./:/server
-     - /server/node_modules
+      - ./:/server
+      - /server/node_modules
     ports:
       - ${PORT}:${PORT}
     depends_on:
