@@ -1,13 +1,11 @@
 {
-  "name": "clevertask-server",
-  "version": "0.0.1",
-  "description": "A restful API to communicate the front-end with Google's Gemini",
-  "main": "index.js",
+  "name": "clevertask-api",
+  "version": "0.0.2",
+  "description": "A restful API to generate items and chat with Sophia AI to keep your life organized",
   "scripts": {
-    "start": "node dist/app.js",
-    "dev": "ts-node-dev src/app.ts",
-    "build": "tsc",
-    "docker:dev": "docker-compose -f docker-compose.dev.yml up"
+    "start": "bun src/app.ts",
+    "dev": "bun --hot run src/app.ts",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up"
   },
   "author": "FreeBird Studios",
   "license": "ISC",
@@ -23,8 +21,6 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.6",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.5"
+    "@types/jsonwebtoken": "^9.0.6"
   }
 }
