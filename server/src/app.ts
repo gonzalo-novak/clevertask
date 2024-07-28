@@ -1,38 +1,35 @@
-import cors from "cors";
-import helmet from "helmet";
-import express from "express";
-import * as log4js from "log4js";
-import { register } from "./routes/register";
+import { Hono } from "hono";
+import { logger } from "hono/logger";
+import loginRoute from "./routes/login";
+import registerRoute from "./routes/register";
 import { connectDatabase } from "./config/db";
-import { pipeRoutes } from "./utils/pipeRoutes";
-import { login } from "./routes/login";
-import { user } from "./routes/user";
+import { HTTPException } from "hono/http-exception";
 
-export const logger = log4js.getLogger("clevertask-log");
-logger.level = "debug";
+await connectDatabase();
+const app = new Hono();
 
-const server = async () => {
-	await connectDatabase();
+app.use(logger());
 
-	const app = express();
-	const port = process.env.PORT;
+app.use(async (c, next) => {
+	await next();
+	const data = { data: await c.res.json() };
+	c.res = undefined;
+	c.res = c.json(data);
+});
 
-	if (process.env.NODE_ENV === "development") {
-		app.use(
-			cors({
-				origin: "*",
-				allowedHeaders: ["Content-Type", "Authorization"],
-			})
-		);
-	}
-	app.use(helmet());
-	app.use(express.json({}));
+app.onError((error, c) => {
+	console.log(error);
+	return c.json(
+		{ error: { message: error.message } },
+		error instanceof HTTPException ? error.status : 500
+	);
+});
 
-	pipeRoutes(register, login, user)(app);
+// Routes setup
+app.route("/user/login", loginRoute);
+app.route("/user/register", registerRoute);
 
-	app.listen(port, () => {
-		console.log(`App listening at http://localhost:${port}`);
-	});
+export default {
+	port: process.env.PORT,
+	fetch: app.fetch,
 };
-
-server();

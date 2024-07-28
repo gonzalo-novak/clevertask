@@ -1,50 +1,37 @@
+import { Hono } from "hono";
 import * as argon2 from "argon2";
-import { logger } from "../../app";
 import { User } from "../../models/User";
 import { UserLoginReqBody } from "./types";
-import { Express, Request, Response } from "express";
+import { HTTPException } from "hono/http-exception";
 import { createAuthToken } from "../../utils/createAuthToken";
-import { verifyUserExistence } from "./middleware/verifyUserExistence";
 import { verifyUserLoginRequestFields } from "./middleware/verifyUserLoginRequestFields";
-import {
-	sendErrorResponseObject,
-	sendSuccessfulResponseObject,
-} from "../../utils/sendResponse";
 
-const login = (app: Express) => {
-	app.post(
-		"/user/login",
-		[verifyUserLoginRequestFields, verifyUserExistence],
-		async (req: Request, res: Response) => {
-			const { email, password } = req.body as UserLoginReqBody;
-			const user = await User.findOne({ email: { $eq: email } });
+const app = new Hono();
 
-			try {
-				const { password: userPassword } = user!.toObject();
-				const isPasswordValid = await argon2.verify(userPassword, password);
+app.use(verifyUserLoginRequestFields);
+app.post("/", async (c) => {
+	const { email, password } = await c.req.json<UserLoginReqBody>();
+	const user = await User.findOne({ email: { $eq: email } });
 
-				if (!isPasswordValid) {
-					return res.status(401).json(
-						sendErrorResponseObject({
-							message: "The credentials are not correct. Try it again.",
-						})
-					);
-				}
+	const throwInvalidCredentialsError = () => {
+		throw new HTTPException(401, {
+			message: "The credentials are not correct. Try it again.",
+		});
+	};
 
-				const token = createAuthToken({ user: user!._id });
-				return res.json(
-					sendSuccessfulResponseObject<{ token: string }>({ token })
-				);
-			} catch (error) {
-				logger.error("Login: ", error);
-				return res.status(500).json(
-					sendErrorResponseObject({
-						message: "There was an error while processing the request",
-					})
-				);
-			}
-		}
-	);
-};
+	if (!user) {
+		throwInvalidCredentialsError();
+	}
 
-export { login };
+	const { password: userPassword, _id } = user!.toObject();
+	const isPasswordValid = await argon2.verify(userPassword, password);
+
+	if (!isPasswordValid) {
+		throwInvalidCredentialsError();
+	}
+
+	const token = createAuthToken({ user: _id });
+	return c.json({ token });
+});
+
+export default app;

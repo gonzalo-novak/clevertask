@@ -1,6 +1,6 @@
 FROM oven/bun:1
 WORKDIR /server
-COPY package.json bun.lockb bunfig.toml ./
-RUN bun install
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 COPY . .
 CMD bun run start
