@@ -1,21 +1,20 @@
-import { Response, Request, NextFunction } from "express";
+import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import jwt, { Secret } from "jsonwebtoken";
 
-const authVerify = (req: Request, res: Response, next: NextFunction) => {
-	const authToken = req.get("Authorization");
+export const authVerify = createMiddleware(async (c, next) => {
+	const authToken = c.req.header("Authorization");
 
 	if (!authToken) {
-		return res.sendStatus(401);
+		throw new HTTPException(401);
 	}
 
 	try {
 		if (authToken) {
 			jwt.verify(authToken, process.env.JWT_KEY as Secret);
-			next();
+			await next();
 		}
 	} catch (error) {
-		return res.sendStatus(401);
+		throw new HTTPException(401, { message: "Token expired. Log in again" });
 	}
-};
-
-export { authVerify };
+});

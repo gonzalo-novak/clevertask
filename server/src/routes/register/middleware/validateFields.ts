@@ -1,31 +1,23 @@
-import { Request, Response, NextFunction } from "express";
+import { createMiddleware } from "hono/factory";
 import { RegisterReqBody } from "../types";
-import { sendErrorResponseObject } from "../../../utils/sendResponse";
+import { HTTPException } from "hono/http-exception";
 
-export const validateRequiredUserFields = (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	const body: RegisterReqBody = req.body;
-	const { name, lastName, email, password } = body;
+export const validateRequiredUserFields = createMiddleware(async (c, next) => {
+	const { name, lastName, email, password } =
+		await c.req.json<RegisterReqBody>();
 
 	if (!name || !lastName || !email || !password) {
-		return res.status(400).json(
-			sendErrorResponseObject({
-				message: "The request object does not meet the required criteria",
-			})
-		);
+		throw new HTTPException(400, {
+			message: "The request object does not meet the required criteria",
+		});
 	}
 
 	if (password.length < 8) {
-		return res.status(400).json(
-			sendErrorResponseObject({
-				message:
-					"The password is too short. Try to think about a long phrase you like",
-			})
-		);
+		throw new HTTPException(400, {
+			message:
+				"The password is too short. Try to think about a long phrase you like",
+		});
 	}
 
-	next();
-};
+	await next();
+});
