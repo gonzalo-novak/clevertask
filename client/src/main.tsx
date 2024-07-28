@@ -1,14 +1,24 @@
+import "@radix-ui/themes/styles.css";
+import "./global.css";
+
 import React from "react";
-import { router } from "./routes";
-import { theme } from "./theme.ts";
 import ReactDOM from "react-dom/client";
-import { ChakraProvider } from "@chakra-ui/react";
-import { RouterProvider } from "react-router-dom";
+import { Flex, Text, Button, Heading, Theme } from "@radix-ui/themes";
+
+export default function MyApp() {
+	return (
+		<Flex direction="column" gap="2">
+			<Heading>Hello world :)</Heading>
+			<Text>Hello from Radix Themes :)</Text>
+			<Button>Let's go</Button>
+		</Flex>
+	);
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
 	<React.StrictMode>
-		<ChakraProvider theme={theme}>
-			<RouterProvider router={router} />
-		</ChakraProvider>
+		<Theme accentColor="orange" scaling="110%">
+			<MyApp />
+		</Theme>
 	</React.StrictMode>
 );
