@@ -7,7 +7,10 @@ config();
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [react(), VitePWA({ registerType: "autoUpdate" })],
+	plugins: [
+		react(),
+		VitePWA({ registerType: "autoUpdate", devOptions: { enabled: false } }),
+	],
 	server: {
 		proxy: {
 			"/api": {
